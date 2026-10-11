@@ -10,24 +10,24 @@
     <div class="max-w-4xl mx-auto">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-800 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-orange-500">🔥 Скрипты и Доппродажи</h1>
+                <h1 class="text-3xl font-bold text-orange-500">🔥 Скрипты и Доппродажи + ИИ</h1>
                 <p class="text-slate-400 text-sm mt-1">Мультимагазинная база: Hugo, RedMoon, Good-Choice, Online-Market Lviv, Loco</p>
             </div>
-            <div class="mt-4 md:mt-0 flex gap-2">
-                <span id="statusBadge" class="bg-slate-800 text-xs px-3 py-1.5 rounded-full border border-slate-700 text-orange-400 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Системные выгрузки подвязаны
-                </span>
+            <div class="mt-4 md:mt-0 flex gap-2 items-center">
+                <button onclick="toggleApiKeyModal()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-full border border-slate-700 text-slate-300 flex items-center gap-1.5 transition">
+                    ⚙️ Настройка ИИ (API Key)
+                </button>
             </div>
         </header>
 
         <!-- Поисковая панель -->
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 mb-8 shadow-xl">
-            <label class="block text-sm font-medium text-slate-300 mb-2">Введите артикул товара или ключевое слово из заказа:</label>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Введите артикул или название товара из заказа:</label>
             <div class="flex flex-col sm:flex-row gap-3">
-                <input type="text" id="skuInput" placeholder="Например: 45892 или триммер..." 
+                <input type="text" id="skuInput" placeholder="Например: 45892 или повербанк 60000..." 
                        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 focus:outline-none focus:border-orange-500 text-white text-lg placeholder-slate-500">
-                <button onclick="searchProduct()" class="bg-orange-600 hover:bg-orange-500 font-semibold px-8 py-3.5 rounded-xl transition text-lg shadow-lg shadow-orange-600/25">
-                    Найти и разобрать
+                <button onclick="analyzeWithAI()" id="searchBtn" class="bg-orange-600 hover:bg-orange-500 font-semibold px-8 py-3.5 rounded-xl transition text-lg shadow-lg shadow-orange-600/25 flex items-center justify-center gap-2">
+                    <span>✨ Сгенерировать ИИ-скрипт</span>
                 </button>
             </div>
         </div>
@@ -38,7 +38,7 @@
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <span id="productStore" class="text-xs font-bold uppercase tracking-wider bg-orange-500/10 text-orange-400 px-2.5 py-1 rounded-md border border-orange-500/20">Магазин</span>
+                        <span id="productStore" class="text-xs font-bold uppercase tracking-wider bg-orange-500/10 text-orange-400 px-2.5 py-1 rounded-md border border-orange-500/20">Товар найден</span>
                         <h2 id="productTitle" class="text-2xl font-bold mt-2 text-white">Название товара</h2>
                     </div>
                     <div class="text-right">
@@ -54,14 +54,14 @@
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
                     <div>
                         <h3 class="text-lg font-semibold mb-3 text-orange-400 flex items-center gap-2">
-                            <span>🛍️</span> Рекомендуемые доппродажи:
+                            <span>🛍️</span> ИИ-Подбор доппродаж:
                         </h3>
-                        <ul id="crossSellList" class="space-y-3 text-slate-300 text-sm">
-                            <!-- Заполняется динамически -->
-                        </ul>
+                        <div id="crossSellList" class="space-y-3 text-slate-300 text-sm">
+                            <!-- Динамический ответ ИИ -->
+                        </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-slate-700/60 text-xs text-slate-400 flex justify-between">
-                        <span>Просчет маржи: <strong class="text-emerald-400" id="marginInfo">Высокая (~30-40%)</strong></span>
+                        <span>Расчет маржи: <strong class="text-emerald-400" id="marginInfo">Высокая (~35%)</strong></span>
                         <span>Доставка: В одной посылке</span>
                     </div>
                 </div>
@@ -80,63 +80,101 @@
                         </p>
                     </div>
                     <div class="mt-4 text-xs text-slate-400">
-                        💡 <i>Совет: Предлагайте доп. позицию сразу после подтверждения адреса доставки.</i>
+                        💡 <i>Совет: Предлагайте аксессуар сразу после подтверждения адреса доставки.</i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Модальное окно для API ключа -->
+    <div id="apiModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-xl font-bold text-white mb-2">⚙️ Настройка Gemini API</h3>
+            <p class="text-xs text-slate-400 mb-4">Введите ваш бесплатный API-ключ Google Gemini. Он сохраняется только локально в вашем браузере.</p>
+            <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm mb-4 focus:outline-none focus:border-orange-500">
+            <div class="flex justify-end gap-2">
+                <button onclick="toggleApiKeyModal()" class="px-4 py-2 text-xs bg-slate-700 hover:bg-slate-600 rounded-xl transition">Отмена</button>
+                <button onclick="saveApiKey()" class="px-4 py-2 text-xs bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl transition">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Все 5 публичных выгрузок карт сайтов
-        const STORES = [
-            { name: "Hugo", sitemap: "https://hugo.com.ua/sitemap.xml" },
-            { name: "RedMoon", sitemap: "https://redmoon.in.ua/sitemap.xml" },
-            { name: "Good-Choice", sitemap: "https://good-choise.com.ua/sitemap.xml" },
-            { name: "Online-Market Lviv", sitemap: "https://online-marketlviv.com.ua/sitemap.xml" },
-            { name: "Loco", sitemap: "https://loco.in.ua/sitemap_index.xml" }
-        ];
+        function toggleApiKeyModal() {
+            document.getElementById('apiModal').classList.toggle('hidden');
+            const savedKey = localStorage.getItem('gemini_api_key') || '';
+            document.getElementById('apiKeyInput').value = savedKey;
+        }
 
-        // Локальная база-заглушка для быстрых тестов во время звонка
-        const mockDatabase = [
-            { sku: "12345", store: "Hugo", title: "Аккумуляторный триммер для травы", price: 1850, cross: ["Фирменное масло для редуктора (149 грн)", "Защитные очки (99 грн)", "Запасная леска усиленная (120 грн)"], script: "Отличный выбор, триммер мощный! Сразу рекомендую взять фирменное масло — заводской смазки там идет совсем чуть-чуть, а с нашим маслом редуктор прослужит в разы дольше. Добавим в заказ всего за 149 грн?" },
-            { sku: "77889", store: "RedMoon", title: "Зарядная станция PowerBank 60000mAh", price: 2400, cross: ["USB-фонарик светодиодный (79 грн)", "Кабель быстрый Type-C (150 грн)"], script: "Станция отличная, держит долго. К ней сейчас берут компактный USB-фонарик по спеццене всего за 79 грн — очень удобно при отключениях света подключать прямо в порт. Давайте доложим в посылку?" },
-            { sku: "99001", store: "Online-Market Lviv", title: "Набор ручного инструмента 94 предмета", price: 1650, cross: ["Набор магнитных бита-насадок (180 грн)", "Спрей-смазка WD-совместимая (110 грн)"], script: "Набор надежный, хром-ванадий. Чтобы кейс не пустовал и под рукой всегда были ходовые биты, клиенты сразу добирают набор насадок со скидкой. Добавим в отправку?" }
-        ];
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            localStorage.setItem('gemini_api_key', key);
+            toggleApiKeyModal();
+            alert('API Ключ сохранен!');
+        }
 
-        function searchProduct() {
-            const query = document.getElementById('skuInput').value.trim().toLowerCase();
-            const container = document.getElementById('resultContainer');
-            
+        async function analyzeWithAI() {
+            const query = document.getElementById('skuInput').value.trim();
             if (!query) return;
 
-            const found = mockDatabase.find(item => item.sku.toLowerCase() === query || item.title.toLowerCase().includes(query));
+            const apiKey = localStorage.getItem('gemini_api_key');
+            const container = document.getElementById('resultContainer');
+            const btn = document.getElementById('searchBtn');
 
             container.classList.remove('hidden');
+            document.getElementById('productTitle').innerText = query;
+            document.getElementById('productSku').innerText = 'Запрос: ' + query;
+            document.getElementById('scriptText').innerText = '⏳ ИИ генерирует оптимальный скрипт и доппродажи...';
+            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Анализ ассортимента магазинов...</div>';
 
-            if (found) {
-                document.getElementById('productStore').innerText = found.store;
-                document.getElementById('productTitle').innerText = found.title;
-                document.getElementById('productPrice').innerText = found.price + ' грн';
-                document.getElementById('productSku').innerText = 'Артикул: ' + found.sku;
-                
-                const list = document.getElementById('crossSellList');
-                list.innerHTML = found.cross.map((c, i) => `<li class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700/60 flex items-center gap-2"><b>${i+1}.</b> ${c}</li>`).join('');
-                
-                document.getElementById('scriptText').innerText = `«${found.script}»`;
-            } else {
-                document.getElementById('productStore').innerText = 'Мультипоиск (Все магазины)';
-                document.getElementById('productTitle').innerText = `Товар по артикулу/запросу: "${query}"`;
-                document.getElementById('productPrice').innerText = 'По прайсу';
-                document.getElementById('productSku').innerText = 'Артикул: ' + query;
-                
-                document.getElementById('crossSellList').innerHTML = `
-                    <li class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700/60">1. <b>Сопутствующий расходник / Смазка / Масло</b> — защита и обслуживание.</li>
-                    <li class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700/60">2. <b>Защитный чехол / Доп. кабель / Насадка</b> — полезное дополнение к заказу.</li>
-                    <li class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700/60">3. <b>Батарейки / Емкостный элемент</b> — готовность к использованию «из коробки».</li>
-                `;
-                
-                document.getElementById('scriptText').innerText = `«Спасибо за подтверждение заказа! Обратите внимание, к этой модели часто берут сопутствующий расходник со скидкой. Это позволит сэкономить на отдельной доставке в будущем и сразу начать пользоваться товаром. Оформляем в один чек?»`;
+            if (!apiKey) {
+                document.getElementById('scriptText').innerText = '⚠️ Пожалуйста, добавьте ваш бесплатный Gemini API-ключ через кнопку "⚙️ Настройка ИИ" вверху страницы.';
+                document.getElementById('crossSellList').innerHTML = '<div class="text-amber-400 text-xs">Ключ ИИ не настроен.</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.opacity = 0.6;
+
+            const prompt = `Ты профессиональный менеджер по доппродажам в интернет-магазинах Украины. 
+Товар в заказе клиента: "${query}".
+Сгенерируй ответ строго в формате JSON без разметки markdown:
+{
+  "cross_sells": [
+    "Название доп.товара 1 (ориентировочная цена) - короткая польза",
+    "Название доп.товара 2 (ориентировочная цена) - короткая польза",
+    "Название доп.товара 3 (ориентировочная цена) - короткая польза"
+  ],
+  "margin": "Высокая (~35-45%)",
+  "script": "Готовый разговорный скрипт для менеджера на русском или украинском, как предложить эти доп.товары во время подтверждения заказа по телефону."
+}`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const rawText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+                const result = JSON.parse(rawText);
+
+                document.getElementById('crossSellList').innerHTML = result.cross_sells.map((item, i) => 
+                    `<div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60"><b>${i+1}.</b> ${item}</div>`
+                ).join('');
+
+                document.getElementById('marginInfo').innerText = result.margin;
+                document.getElementById('scriptText').innerText = `«${result.script}»`;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('scriptText').innerText = 'Ошибка генерации. Проверьте правильность API ключа в настройках.';
+            } finally {
+                btn.disabled = false;
             }
         }
 
