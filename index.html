@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Помощник по доппродажам</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-6">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4 text-orange-500">🔥 Подбор доппродаж</h1>
+        <p class="text-slate-400 mb-6">Введите название товара или артикул, чтобы увидеть варианты для кросс-продажи.</p>
+        
+        <div class="flex gap-3 mb-6">
+            <input type="text" id="productInput" placeholder="Например: Триммер или артикул" 
+                   class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 text-white">
+            <button onclick="searchProduct()" class="bg-orange-600 hover:bg-orange-500 font-semibold px-6 py-3 rounded-lg transition">
+                Найти
+            </button>
+        </div>
+
+        <div id="resultCard" class="bg-slate-800 border border-slate-700 rounded-xl p-6 hidden">
+            <h2 class="text-xl font-semibold mb-3 text-orange-400">Рекомендуемые доппродажи:</h2>
+            <ul id="recommendationsList" class="space-y-3 text-slate-300">
+                <!-- Сюда будут выводиться рекомендации -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function searchProduct() {
+            const input = document.getElementById('productInput').value.trim();
+            const resultCard = document.getElementById('resultCard');
+            const list = document.getElementById('recommendationsList');
+            
+            if (!input) return;
+
+            resultCard.classList.remove('hidden');
+            // Временный шаблон вариантов (далее заменим на ваш каталог или ИИ)
+            list.innerHTML = `
+                <li class="bg-slate-900 p-3 rounded-lg border border-slate-700">1. <b>Сопутствующий расходник / Аксессуар</b> — отлично подойдет к товару "${input}".</li>
+                <li class="bg-slate-900 p-3 rounded-lg border border-slate-700">2. <b>Средство для ухода / Защитное масло</b> — увеличивает чек и полезно клиенту.</li>
+                <li class="bg-slate-900 p-3 rounded-lg border border-slate-700">3. <b>Фирменный чехол / Кейс</b> — для безопасного хранения.</li>
+            `;
+        }
+    </script>
+</body>
+</html>
