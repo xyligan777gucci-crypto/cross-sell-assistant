@@ -146,4 +146,84 @@
 "   - Название\n" +
 "   - Розница (грн)\n" +
 "   - Примерная закупка/опт (грн)\n" +
-"   -
+"   - ПЛЮСЫ и выгода для клиента\n" +
+"4. Сформулируй готовый короткий разговорный скрипт ДОППРОДАЖИ на украинском языке (без приветствия — сразу блок предложения доп. позиций в одну посылку).\n\n" +
+"Ответь строго в формате JSON без разметки markdown:\n" +
+"{\n" +
+"  \"product_name\": \"Название основного товара\",\n" +
+"  \"est_purchase\": \"Примерная закупка основного товара (например: ~450 грн)\",\n" +
+"  \"cross_sells\": [\n" +
+"    \"1. Название товара | Розница: 250 грн (Закупка: ~120 грн) — ПЛЮСЫ: подробная выгода\",\n" +
+"    \"2. Название товара | Розница: 180 грн (Закупка: ~80 грн) — ПЛЮСЫ: подробная выгода\",\n" +
+"    \"3. Название товара | Розница: 350 грн (Закупка: ~170 грн) — ПЛЮСЫ: подробная выгода\",\n" +
+"    \"4. Название товара | Розница: 150 грн (Закупка: ~60 грн) — ПЛЮСЫ: подробная выгода\"\n" +
+"  ],\n" +
+"  \"margin\": \"Чистая прибыль ~40-50%\",\n" +
+"  \"script\": \"Разговорный скрипт чисто под доппродажу на украинском языке.\"\n" +
+"}";
+
+            // Массив эндпоинтов для резервирования
+            const endpoints = [
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=",
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=",
+                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key="
+            ];
+
+            let data = null;
+            let lastError = null;
+
+            // Перебор эндпоинтов по очереди
+            for (let url of endpoints) {
+                try {
+                    const response = await fetch(url + apiKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const resJson = await response.json();
+                    if (!resJson.error) {
+                        data = resJson;
+                        break; // Если нашли рабочий ответ — выходим из цикла
+                    } else {
+                        lastError = resJson.error.message;
+                    }
+                } catch (e) {
+                    lastError = e.message;
+                }
+            }
+
+            try {
+                if (!data) {
+                    throw new Error(lastError || 'Не удалось получить ответ от Google API');
+                }
+
+                let rawText = data.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json|```/g, '').trim();
+                const result = JSON.parse(rawText);
+
+                document.getElementById('productTitle').innerText = result.product_name || ('Товар (код: ' + query + ')');
+                document.getElementById('purchasePrice').innerText = result.est_purchase || '~Закупка уточняется';
+                
+                document.getElementById('crossSellList').innerHTML = result.cross_sells.map(function(item) {
+                    return '<div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/60 leading-relaxed">' + item + '</div>';
+                }).join('');
+
+                document.getElementById('marginInfo').innerText = result.margin;
+                document.getElementById('scriptText').innerText = '«' + result.script + '»';
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('scriptText').innerText = 'Ошибка запроса: ' + err.message + '. Попробуйте еще раз.';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function copyScript() {
+            const text = document.getElementById('scriptText').innerText;
+            navigator.clipboard.writeText(text);
+            alert('Скрипт скопирован!');
+        }
+    </script>
+</body>
+</html>
