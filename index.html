@@ -91,8 +91,8 @@
     <div id="apiModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-2">⚙️ Настройка Gemini API</h3>
-            <p class="text-xs text-slate-400 mb-4">Введите ваш бесплатный API-ключ Google Gemini. Он сохраняется только локально в вашем браузере.</p>
-            <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm mb-4 focus:outline-none focus:border-orange-500">
+            <p class="text-xs text-slate-400 mb-4">Введите ваш API-ключ Google Gemini. Он сохраняется только локально в вашем браузере.</p>
+            <input type="password" id="apiKeyInput" placeholder="Вставьте ваш API Key..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm mb-4 focus:outline-none focus:border-orange-500">
             <div class="flex justify-end gap-2">
                 <button onclick="toggleApiKeyModal()" class="px-4 py-2 text-xs bg-slate-700 hover:bg-slate-600 rounded-xl transition">Отмена</button>
                 <button onclick="saveApiKey()" class="px-4 py-2 text-xs bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl transition">Сохранить</button>
@@ -118,7 +118,8 @@
             const query = document.getElementById('skuInput').value.trim();
             if (!query) return;
 
-            const apiKey = localStorage.getItem('gemini_api_key');
+            let apiKey = (localStorage.getItem('gemini_api_key') || '').trim();
+
             const container = document.getElementById('resultContainer');
             const btn = document.getElementById('searchBtn');
 
@@ -126,28 +127,27 @@
             document.getElementById('productTitle').innerText = query;
             document.getElementById('productSku').innerText = 'Запрос: ' + query;
             document.getElementById('scriptText').innerText = '⏳ ИИ генерирует оптимальный скрипт и доппродажи...';
-            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Анализ ассортимента магазинов...</div>';
+            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Анализ ассортимента...</div>';
 
             if (!apiKey) {
-                document.getElementById('scriptText').innerText = '⚠️ Пожалуйста, добавьте ваш бесплатный Gemini API-ключ через кнопку "⚙️ Настройка ИИ" вверху страницы.';
-                document.getElementById('crossSellList').innerHTML = '<div class="text-amber-400 text-xs">Ключ ИИ не настроен.</div>';
+                document.getElementById('scriptText').innerText = '⚠️ Пожалуйста, добавьте ваш API-ключ из Google AI Studio в настройках (⚙️ Настройка ИИ).';
+                document.getElementById('crossSellList').innerHTML = '<div class="text-amber-400 text-xs">API Ключ не зафиксирован.</div>';
                 return;
             }
 
             btn.disabled = true;
-            btn.opacity = 0.6;
 
-            const prompt = `Ты профессиональный менеджер по доппродажам в интернет-магазинах Украины. 
+            const prompt = `Ты профессиональный менеджер по доппродажам в интернет-магазинах Украины (Hugo, RedMoon, Good-Choice, Lviv, Loco). 
 Товар в заказе клиента: "${query}".
-Сгенерируй ответ строго в формате JSON без разметки markdown:
+Ответь строго в формате JSON без разметки markdown:
 {
   "cross_sells": [
-    "Название доп.товара 1 (ориентировочная цена) - короткая польза",
-    "Название доп.товара 2 (ориентировочная цена) - короткая польза",
-    "Название доп.товара 3 (ориентировочная цена) - короткая польза"
+    "1. Название сопутствующего товара (примерная цена) — короткая выгода для клиента",
+    "2. Название сопутствующего товара (примерная цена) — короткая выгода для клиента",
+    "3. Название сопутствующего товара (примерная цена) — короткая выгода для клиента"
   ],
   "margin": "Высокая (~35-45%)",
-  "script": "Готовый разговорный скрипт для менеджера на русском или украинском, как предложить эти доп.товары во время подтверждения заказа по телефону."
+  "script": "Готовый короткий разговорный скрипт для менеджера при подтверждении заказа по телефону на украинском или русском языке."
 }`;
 
             try {
@@ -160,11 +160,17 @@
                 });
 
                 const data = await response.json();
-                const rawText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+
+                if (data.error) {
+                    throw new Error(data.error.message || 'Ошибка ответа API');
+                }
+
+                let rawText = data.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json|```/g, '').trim();
                 const result = JSON.parse(rawText);
 
-                document.getElementById('crossSellList').innerHTML = result.cross_sells.map((item, i) => 
-                    `<div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60"><b>${i+1}.</b> ${item}</div>`
+                document.getElementById('crossSellList').innerHTML = result.cross_sells.map(item => 
+                    `<div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60">${item}</div>`
                 ).join('');
 
                 document.getElementById('marginInfo').innerText = result.margin;
@@ -172,7 +178,7 @@
 
             } catch (err) {
                 console.error(err);
-                document.getElementById('scriptText').innerText = 'Ошибка генерации. Проверьте правильность API ключа в настройках.';
+                document.getElementById('scriptText').innerText = 'Ошибка запроса: ' + err.message + '. Убедитесь, что ключ сохранен правильно.';
             } finally {
                 btn.disabled = false;
             }
@@ -181,7 +187,7 @@
         function copyScript() {
             const text = document.getElementById('scriptText').innerText;
             navigator.clipboard.writeText(text);
-            alert('Скрипт скопирован в буфер обмена!');
+            alert('Скрипт скопирован!');
         }
     </script>
 </body>
