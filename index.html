@@ -22,9 +22,9 @@
 
         <!-- Поисковая панель -->
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 mb-8 shadow-xl">
-            <label class="block text-sm font-medium text-slate-300 mb-2">Введите артикул или название товара из заказа:</label>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Введите код товара (артикул) или название из заказа:</label>
             <div class="flex flex-col sm:flex-row gap-3">
-                <input type="text" id="skuInput" placeholder="Например: 45892 или повербанк 60000..." 
+                <input type="text" id="skuInput" placeholder="Например: 234573857 или повербанк..." 
                        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 focus:outline-none focus:border-orange-500 text-white text-lg placeholder-slate-500">
                 <button onclick="analyzeWithAI()" id="searchBtn" class="bg-orange-600 hover:bg-orange-500 font-semibold px-8 py-3.5 rounded-xl transition text-lg shadow-lg shadow-orange-600/25 flex items-center justify-center gap-2">
                     <span>✨ Сгенерировать ИИ-скрипт</span>
@@ -43,7 +43,7 @@
                     </div>
                     <div class="text-right">
                         <div id="productPrice" class="text-2xl font-bold text-emerald-400">По прайсу</div>
-                        <div id="productSku" class="text-xs text-slate-400 mt-1">Артикул: —</div>
+                        <div id="productSku" class="text-xs text-slate-400 mt-1">Код: —</div>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                     <div>
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="text-lg font-semibold text-orange-400 flex items-center gap-2">
-                                <span>🗣️</span> Готовый скрипт для звонка:
+                                `r '🗣️'` Готовый скрипт для звонка:
                             </h3>
                             <button onclick="copyScript()" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded transition text-slate-300">Копировать</button>
                         </div>
@@ -124,10 +124,10 @@
             const btn = document.getElementById('searchBtn');
 
             container.classList.remove('hidden');
-            document.getElementById('productTitle').innerText = query;
-            document.getElementById('productSku').innerText = 'Запрос: ' + query;
-            document.getElementById('scriptText').innerText = '⏳ ИИ генерирует оптимальный скрипт и доппродажи...';
-            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Анализ ассортимента...</div>';
+            document.getElementById('productTitle').innerText = `Товар по коду/запросу: ${query}`;
+            document.getElementById('productSku').innerText = 'Код: ' + query;
+            document.getElementById('scriptText').innerText = '⏳ ИИ анализирует товар по каталогам магазинов (Hugo, RedMoon, Good-Choice, Lviv, Loco)...';
+            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Подбор сопутствующих позиций...</div>';
 
             if (!apiKey) {
                 document.getElementById('scriptText').innerText = '⚠️ Пожалуйста, добавьте ваш API-ключ из Google AI Studio в настройках (⚙️ Настройка ИИ).';
@@ -137,22 +137,23 @@
 
             btn.disabled = true;
 
-            const prompt = `Ты профессиональный менеджер по доппродажам в интернет-магазинах Украины (Hugo, RedMoon, Good-Choice, Lviv, Loco). 
-Товар в заказе клиента: "${query}".
-Ответь строго в формате JSON без разметки markdown:
+            const prompt = `Ты профессиональный менеджер по доппродажам в интернет-магазинах Украины (Hugo, RedMoon, Good-Choice, Online-Market Lviv, Loco). 
+Менеджер ввел код товара или артикул из CRM/Prom.ua: "${query}".
+Проанализируй этот код или товар и ответь строго в формате JSON без разметки markdown:
 {
+  "product_name": "Точное название товара по данному коду (или наиболее вероятный товар, если это цифровой артикул)",
   "cross_sells": [
-    "1. Название сопутствующего товара (примерная цена) — короткая выгода для клиента",
-    "2. Название сопутствующего товара (примерная цена) — короткая выгода для клиента",
-    "3. Название сопутствующего товара (примерная цена) — короткая выгода для клиента"
+    "1. Название сопутствующего товара (примерная цена в грн) — короткая польза для клиента",
+    "2. Название сопутствующего товара (примерная цена в грн) — короткая польза для клиента",
+    "3. Название сопутствующего товара (примерная цена в грн) — короткая польза для клиента"
   ],
   "margin": "Высокая (~35-45%)",
-  "script": "Готовый короткий разговорный скрипт для менеджера при подтверждении заказа по телефону на украинском или русском языке."
+  "script": "Готовый разговорный скрипт для менеджера при подтверждении заказа по телефону на украинском или русском языке (с мягким предложением доппродажи в одну посылку)."
 }`;
 
             try {
-                // Обновлено на последнюю модель gemini-3.8-flash
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
+                // Возвращаем стабильный и надежный эндпоинт v1
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -170,6 +171,8 @@
                 rawText = rawText.replace(/```json|```/g, '').trim();
                 const result = JSON.parse(rawText);
 
+                document.getElementById('productTitle').innerText = result.product_name || `Товар (код: ${query})`;
+                
                 document.getElementById('crossSellList').innerHTML = result.cross_sells.map(item => 
                     `<div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60">${item}</div>`
                 ).join('');
@@ -179,7 +182,7 @@
 
             } catch (err) {
                 console.error(err);
-                document.getElementById('scriptText').innerText = 'Ошибка запроса: ' + err.message + '. Убедитесь, что ключ сохранен правильно.';
+                document.getElementById('scriptText').innerText = 'Ошибка запроса: ' + err.message + '. Попробуйте еще раз через пару секунд.';
             } finally {
                 btn.disabled = false;
             }
