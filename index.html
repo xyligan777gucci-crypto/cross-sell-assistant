@@ -126,8 +126,8 @@
             container.classList.remove('hidden');
             document.getElementById('productTitle').innerText = 'Анализ товара: ' + query;
             document.getElementById('productSku').innerText = 'Код: ' + query;
-            document.getElementById('scriptText').innerText = '⏳ ИИ подбирает 4 позиции, просчитывает закупку и формирует скрипт...';
-            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Расчет закупки и подбор доппродаж...</div>';
+            document.getElementById('scriptText').innerText = '⏳ Запрос идет через Cloudflare Worker по базам 5 магазинов...';
+            document.getElementById('crossSellList').innerHTML = '<div class="text-slate-400 animate-pulse">Анализ каталогов Prom и подбор доппродаж...</div>';
 
             if (!apiKey) {
                 document.getElementById('scriptText').innerText = '⚠️ Пожалуйста, добавьте ваш API-ключ из Google AI Studio в настройках (⚙️ Настройка ИИ).';
@@ -137,48 +137,19 @@
 
             btn.disabled = true;
 
-            const promptText = "Ты опытнейший менеджер по продажам в e-commerce интернет-магазинах Украины (Hugo, RedMoon, Good-Choice, Lviv, Loco).\n" +
-"Товар в основном заказе (код или название): \"" + query + "\".\n\n" +
-"Задача:\n" +
-"1. Определи точное название товара и его примерную закупочную (оптовую) цену в грн.\n" +
-"2. Выдели ровно 4 лучшие позиции для доппродажи.\n" +
-"3. Для КАЖДОЙ из 4 позиций распиши:\n" +
-"   - Название\n" +
-"   - Розница (грн)\n" +
-"   - Примерная закупка/опт (грн)\n" +
-"   - ПЛЮСЫ и выгода для клиента\n" +
-"4. Сформулируй готовый короткий разговорный скрипт ДОППРОДАЖИ на украинском языке (без приветствия — сразу блок предложения доп. позиций в одну посылку).\n\n" +
-"Ответь строго в формате JSON без разметки markdown:\n" +
-"{\n" +
-"  \"product_name\": \"Название основного товара\",\n" +
-"  \"est_purchase\": \"Примерная закупка основного товара (например: ~450 грн)\",\n" +
-"  \"cross_sells\": [\n" +
-"    \"1. Название товара | Розница: 250 грн (Закупка: ~120 грн) — ПЛЮСЫ: подробная выгода\",\n" +
-"    \"2. Название товара | Розница: 180 грн (Закупка: ~80 грн) — ПЛЮСЫ: подробная выгода\",\n" +
-"    \"3. Название товара | Розница: 350 грн (Закупка: ~170 грн) — ПЛЮСЫ: подробная выгода\",\n" +
-"    \"4. Название товара | Розница: 150 грн (Закупка: ~60 грн) — ПЛЮСЫ: подробная выгода\"\n" +
-"  ],\n" +
-"  \"margin\": \"Чистая прибыль ~40-50%\",\n" +
-"  \"script\": \"Разговорный скрипт чисто под доппродажу на украинском языке.\"\n" +
-"}";
-
             try {
-                // Используем актуальную модель gemini-3.8-flash, указанную в системном сообщении об ошибке
-                const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey, {
+                // Запрос идет на ваш защищенный серверный бэкенд Cloudflare Worker
+                const response = await fetch("https://winter-firefly-cbfb.xyligan777gucci.workers.dev", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                    body: JSON.stringify({ query: query, apiKey: apiKey })
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (data.error) {
-                    throw new Error(data.error.message || 'Ошибка API');
+                if (result.error) {
+                    throw new Error(result.error);
                 }
-
-                let rawText = data.candidates[0].content.parts[0].text;
-                rawText = rawText.replace(/```json|```/g, '').trim();
-                const result = JSON.parse(rawText);
 
                 document.getElementById('productTitle').innerText = result.product_name || ('Товар (код: ' + query + ')');
                 document.getElementById('purchasePrice').innerText = result.est_purchase || '~Закупка уточняется';
@@ -193,6 +164,7 @@
             } catch (err) {
                 console.error(err);
                 document.getElementById('scriptText').innerText = 'Ошибка запроса: ' + err.message + '. Попробуйте еще раз.';
+                document.getElementById('crossSellList').innerHTML = '<div class="text-red-400 text-xs">Ошибка соединения с воркером.</div>';
             } finally {
                 btn.disabled = false;
             }
